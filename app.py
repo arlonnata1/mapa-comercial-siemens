@@ -10,13 +10,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilização Siemens e CSS customizado para aproximar do HTML original
+# Estilização Siemens e CSS customizado
 st.markdown("""
     <style>
     h1, h2, h3 { color: #009999 !important; font-family: 'Arial', sans-serif; }
     [data-testid="stSidebar"] { background-color: #0c1728; }
     
-    /* Estilização das caixinhas de métricas na barra lateral */
     [data-testid="stMetricValue"] { font-size: 24px !important; font-weight: bold; }
     [data-testid="stMetricLabel"] { font-size: 11px !important; text-transform: uppercase; color: #8ea2ba !important; }
     div[data-testid="metric-container"] {
@@ -26,7 +25,6 @@ st.markdown("""
         padding: 10px;
     }
     
-    /* Scrollbar customizada para a lista de clientes */
     .client-list { height: 400px; overflow-y: auto; padding-right: 5px; margin-top: 15px; }
     .client-list::-webkit-scrollbar { width: 6px; }
     .client-list::-webkit-scrollbar-track { background: #0c1728; }
@@ -39,15 +37,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Paleta de cores exata do seu HTML original
-CORES_VENDEDORES = {
-    "Bruno Silva De Almeida": "#F59E0B",
-    "Ib Da Silva Souza": "#6366F1",
-    "Lígia Machado": "#EC4899",
-    "Mauricio Costa De Queiroz": "#EF4444",
-    "Novak Sander Monteiro Barros": "#10B981",
-    "Raimundo Marques Barreiros Junior": "#00A9E0",
-    "Rogerio Leopoldino Da Silva Filho": "#7C3AED"
+# Nova paleta de cores baseada nos Canais de Vendas
+CORES_CANAIS = {
+    "Distribuidor": "#00A9E0",        # Azul
+    "Integrador": "#F59E0B",          # Laranja
+    "OEM": "#EC4899",                 # Rosa
+    "Fabricante de Quadro": "#7C3AED",# Roxo
+    "Cliente Final": "#10B981"        # Verde
 }
 
 if os.path.exists("logo.png"):
@@ -60,7 +56,6 @@ def carregar_dados():
     if 'Longitude' not in df.columns: df['Longitude'] = None
     if 'Segmento' not in df.columns: df['Segmento'] = "Não informado"
     
-    # Garantir que tudo é texto para evitar erros na busca
     df['CNPJ'] = df['CNPJ'].astype(str)
     df['CEP'] = df['CEP'].astype(str)
     return df
@@ -106,15 +101,14 @@ col3.metric("Vendedores", df_filtrado['Novo Vendedor'].nunique())
 if len(df_filtrado) > 0:
     lista_html = "<div class='client-list'>"
     for _, row in df_filtrado.iterrows():
-        vendedor = row.get('Novo Vendedor', '')
-        cor = CORES_VENDEDORES.get(vendedor, "#8ea2ba")
+        canal = str(row.get('Canal de Vendas', ''))
+        cor = CORES_CANAIS.get(canal, "#8ea2ba") # Cinza como padrão se não houver match
         
-        # O bloco abaixo não tem recuo para o Streamlit interpretar como HTML puro
         lista_html += f"""<div class="client-row">
 <div class="client-dot" style="color: {cor};">●</div>
 <div style="min-width: 0;">
     <div class="client-name" title="{row['Razão Social']}">{row['Razão Social']}</div>
-    <div class="client-meta">{row['CEP'][:5]}-{row['CEP'][5:8]} • {row['Canal de Vendas']}</div>
+    <div class="client-meta">{row['Canal de Vendas']} • {row['Novo Vendedor']}</div>
 </div>
 </div>"""
     lista_html += "</div>"
@@ -133,8 +127,8 @@ with tab_mapa:
         m = folium.Map(location=[lat_media, lon_media], zoom_start=5, tiles="http://mt0.google.com/vt/lyrs=m&hl=pt-BR&x={x}&y={y}&z={z}", attr="Google Maps")
 
         for _, row in df_mapeados.iterrows():
-            vendedor = row.get('Novo Vendedor', '')
-            cor_hex = CORES_VENDEDORES.get(vendedor, "#009999")
+            canal = str(row.get('Canal de Vendas', ''))
+            cor_hex = CORES_CANAIS.get(canal, "#009999")
             
             popup_html = f"""
             <div style='width: 250px; font-family: Arial, sans-serif;'>
@@ -142,7 +136,7 @@ with tab_mapa:
                 <b>CNPJ:</b> {row['CNPJ']}<br>
                 <b>Canal:</b> {row['Canal de Vendas']}<br>
                 <b>Segmento:</b> {row['Segmento']}<br>
-                <b>Vendedor:</b> {vendedor}<br>
+                <b>Vendedor:</b> {row['Novo Vendedor']}<br>
                 <b>CEP:</b> {row['CEP']}
             </div>
             """
